@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRA-02 | Email Planner & Assigner</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d1b4b; --blue: #1565c0; --sky: #29b6f6;
+  --light: #e3f2fd; --dark: #0a1128; --accent: #00e5ff;
+  --success: #00e676; --warn: #ffd740; --danger: #ff5252;
+  --card: rgba(255,255,255,0.04); --border: rgba(41,182,246,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background: var(--dark); color: #e0e8f0; font-family: 'DM Sans', sans-serif; min-height:100vh; }
+.bg-grid { position:fixed; inset:0; background-image: linear-gradient(rgba(41,182,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(41,182,246,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events:none; z-index:0; }
+.container { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:24px; }
+
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.logo-badge { width:48px; height:48px; background:linear-gradient(135deg,#1565c0,#00e5ff); border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:#fff; }
+.header-title h1 { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--sky); }
+.header-title p { font-size:12px; color:#7a8bb0; margin-top:2px; }
+.agent-badge { background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); color:var(--accent); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; }
+
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:28px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+.stat-num { font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; color:var(--sky); }
+.stat-label { font-size:11px; color:#7a8bb0; margin-top:4px; }
+
+.two-col { display:grid; grid-template-columns:1fr 2fr; gap:20px; margin-bottom:20px; }
+
+.panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.section-title { font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:700; color:#c0cfe0; margin-bottom:16px; letter-spacing:1px; text-transform:uppercase; }
+
+.btn { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:8px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; transition:all 0.2s; }
+.btn-primary { background:linear-gradient(135deg,var(--blue),var(--sky)); color:#fff; }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(41,182,246,0.4); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:#c0cfe0; }
+.btn-outline:hover { border-color:var(--sky); color:var(--sky); }
+.btn-danger { background:rgba(255,82,82,0.15); border:1px solid rgba(255,82,82,0.3); color:var(--danger); }
+
+.form-group { margin-bottom:14px; }
+.form-label { font-size:12px; color:#7a8bb0; margin-bottom:6px; display:block; }
+.form-input { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#e0e8f0; padding:9px 12px; border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; }
+.form-input:focus { outline:none; border-color:var(--sky); }
+.form-input option { background:#0a1128; }
+
+.import-area { border:2px dashed var(--border); border-radius:10px; padding:24px; text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:14px; }
+.import-area:hover { border-color:var(--sky); background:rgba(41,182,246,0.04); }
+.import-area input { display:none; }
+
+/* Contact Table */
+.table-wrap { overflow-x:auto; max-height:450px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { background:rgba(21,101,192,0.3); color:var(--sky); padding:10px 12px; text-align:left; font-weight:600; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; position:sticky; top:0; z-index:1; white-space:nowrap; }
+td { padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:#c0cfe0; vertical-align:top; }
+tr:hover td { background:rgba(41,182,246,0.04); }
+.industry-badge { display:inline-block; background:rgba(21,101,192,0.3); color:#90caf9; padding:2px 8px; border-radius:10px; font-size:10px; white-space:nowrap; }
+.email-preview-cell { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; color:var(--sky); }
+.email-preview-cell:hover { text-decoration:underline; }
+.status-chip { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; }
+.chip-assigned { background:rgba(0,230,118,0.15); color:var(--success); }
+.chip-pending { background:rgba(255,215,64,0.15); color:var(--warn); }
+
+.controls-bar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; }
+.search-input { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#e0e8f0; padding:8px 12px; border-radius:8px; font-size:13px; flex:1; min-width:200px; }
+
+/* Email Preview Modal */
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; }
+.modal.open { display:flex; }
+.modal-box { background:#0d1b4b; border:1px solid var(--border); border-radius:16px; padding:28px; max-width:680px; width:90%; max-height:80vh; overflow-y:auto; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.modal-title { font-family:'Rajdhani',sans-serif; font-size:18px; color:var(--sky); }
+
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="logo-badge">IRA</div>
+    <div class="header-title">
+      <h1>EMAIL PLANNER & ASSIGNER — AGENT 02</h1>
+      <p>BNI Contact Intelligence & Industry-Matched Email Assignment</p>
+    </div>
+  </div>
+  <div class="agent-badge">PLANNER</div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-num" id="statContacts">0</div><div class="stat-label">Total Contacts</div></div>
+  <div class="stat-card"><div class="stat-num" id="statAssigned">0</div><div class="stat-label">Emails Assigned</div></div>
+  <div class="stat-card"><div class="stat-num" id="statPending">0</div><div class="stat-label">Pending Assignment</div></div>
+  <div class="stat-card"><div class="stat-num" id="statIndustries">0</div><div class="stat-label">Industries</div></div>
+  <div class="stat-card"><div class="stat-num" id="statTemplates">0</div><div class="stat-label">Templates Available</div></div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="section-title">Import Contacts</div>
+      <label class="import-area" onclick="document.getElementById('csvFile').click()">
+        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" onchange="handleFileImport(this)">
+        <div style="font-size:24px;margin-bottom:8px;">📁</div>
+        <div style="font-size:13px;color:#7a8bb0;">Click to import CSV / Excel</div>
+        <div style="font-size:11px;color:#4a6080;margin-top:4px;">Headers: FirstName, LastName, Email, Company, Industry, Country</div>
+      </label>
+      <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="document.getElementById('sampleCSV').click()">⬇ Download Sample CSV</button>
+      <a id="sampleCSV" style="display:none"></a>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Add Single Contact</div>
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <input class="form-input" id="fName" placeholder="Harshit">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <input class="form-input" id="lName" placeholder="Shah">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" id="email" placeholder="harshit@company.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company Name</label>
+        <input class="form-input" id="company" placeholder="ABC Pvt Ltd">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Industry</label>
+        <select class="form-input" id="industry">
+          <option value="">Select Industry</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Country</label>
+        <input class="form-input" id="country" placeholder="India" value="India">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="addContact()">+ Add & Assign Email</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="controls-bar">
+        <input class="search-input" placeholder="Search contacts..." oninput="searchContacts(this.value)">
+        <button class="btn btn-primary" onclick="assignAllEmails()">⚡ Assign All Emails</button>
+        <button class="btn btn-outline" onclick="exportContacts()">↓ Export Excel</button>
+        <button class="btn btn-danger" onclick="clearContacts()">🗑 Clear All</button>
+      </div>
+      <div class="section-title">Contact Database <span id="contactCountLabel" style="color:var(--sky);font-size:12px;font-weight:400;margin-left:8px"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>First</th>
+              <th>Last</th>
+              <th>Company</th>
+              <th>Industry</th>
+              <th>Email</th>
+              <th>Country</th>
+              <th>Assigned Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="contactTableBody">
+            <tr><td colspan="10" style="text-align:center;padding:40px;color:#5a7090;">No contacts yet. Import a CSV or add manually.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Preview Modal -->
+<div class="modal" id="emailModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Email Preview</div>
+      <button class="btn btn-outline" onclick="closeModal()" style="padding:6px 12px;font-size:12px;">✕ Close</button>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5a7090;margin-bottom:4px;">TO:</div>
+      <div style="font-size:13px;color:#c0cfe0;" id="modalTo"></div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5a7090;margin-bottom:4px;">SUBJECT:</div>
+      <div style="font-size:14px;font-weight:500;color:var(--sky);" id="modalSubject"></div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;">
+      <div style="font-size:11px;color:#5a7090;margin-bottom:8px;">BODY:</div>
+      <div style="font-size:13px;color:#c0cfe0;line-height:1.7;white-space:pre-line;" id="modalBody"></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="reassignEmail(currentContact)">↻ Reassign Different Email</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BNI_INDUSTRIES = ['IT & Technology','Real Estate','Manufacturing','Finance & Banking','Healthcare','Education','Retail & E-commerce','Logistics & Supply Chain','FMCG & Consumer Goods','Legal Services','Marketing & Advertising','Construction','Hospitality & Tourism','Automotive','Media & Entertainment','Consulting & Professional Services','Agriculture','Energy & Utilities','Pharmaceuticals','Insurance'];
+
+let currentContact = null;
+
+function getContacts() { return JSON.parse(localStorage.getItem('ira_contacts_v1') || '[]'); }
+function saveContacts(d) { localStorage.setItem('ira_contacts_v1', JSON.stringify(d)); }
+function getTemplates() { return JSON.parse(localStorage.getItem('ira_templates_v1') || '[]'); }
+
+function populateIndustrySelect() {
+  const sel = document.getElementById('industry');
+  BNI_INDUSTRIES.forEach(i => { const o = document.createElement('option'); o.value = i; o.textContent = i; sel.appendChild(o); });
+}
+
+function getEmailForIndustry(industry, usedIds = []) {
+  const templates = getTemplates();
+  const specific = templates.filter(t => (t.industry === industry || t.industry === 'All') && t.type === 'email' && !usedIds.includes(t.id));
+  if (!specific.length) {
+    const fallback = templates.filter(t => t.type === 'email' && !usedIds.includes(t.id));
+    if (!fallback.length) return templates.filter(t=>t.type==='email')[0] || null;
+    return fallback[Math.floor(Math.random() * fallback.length)];
+  }
+  return specific[Math.floor(Math.random() * specific.length)];
+}
+
+function buildEmailBody(template, contact) {
+  if (!template) return 'No template available. Please sync templates in Agent 01.';
+  const base = `Hi ${contact.firstName},
+
+I hope this message finds you well.
+
+${template.preview}
+
+At Ira Infinite, we specialise in Business Transformation and AI Implementation Consulting. With 14+ years of experience and 20,000+ professionals impacted across 10+ industries including ${contact.industry}, we've seen firsthand what separates businesses that scale from those that stagnate.
+
+Based on what we understand about ${contact.company} and the ${contact.industry} sector, I believe there's a meaningful opportunity for us to create real value together — either through our flagship Kurukshetra experiential workshop for your team, or through a structured Business Transformation and AI Automation engagement.
+
+I've attached our company profile for your reference — it covers our full suite of services, client outcomes, and engagement models.
+
+Would you be open to a 20-minute conversation to explore whether there's a fit?
+
+Warmly,
+
+Harshit Shah
+Co-Founder, Ira Infinite
+📱 +91 90996 43223 | +91 82100 76015
+📧 info@IraInfinite.com | 🌐 www.IraInfinite.com
+
+सर्वे सफलाः भवन्ति — May All Achieve Success
+
+---
+This email was sent by Ira Infinite, Ahmedabad, India.
+You are receiving this because of your professional profile.
+To opt out of future emails, reply with UNSUBSCRIBE.`;
+  return base;
+}
+
+function addContact() {
+  const contact = {
+    id: Date.now().toString(),
+    firstName: document.getElementById('fName').value.trim(),
+    lastName: document.getElementById('lName').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    company: document.getElementById('company').value.trim(),
+    industry: document.getElementById('industry').value,
+    country: document.getElementById('country').value.trim() || 'India',
+    status: 'pending',
+    assignedEmailId: null,
+    assignedSubject: null,
+    assignedBody: null,
+    addedAt: new Date().toISOString()
+  };
+  
+  if (!contact.email || !contact.firstName) { alert('First name and email are required.'); return; }
+  
+  const contacts = getContacts();
+  if (contacts.find(c => c.email === contact.email)) { alert('Contact with this email already exists.'); return; }
+  
+  const template = getEmailForIndustry(contact.industry);
+  if (template) {
+    contact.assignedEmailId = template.id;
+    contact.assignedSubject = template.subject;
+    contact.assignedBody = buildEmailBody(template, contact);
+    contact.status = 'assigned';
+  }
+  
+  contacts.push(contact);
+  saveContacts(contacts);
+  
+  // Clear form
+  ['fName','lName','email','company'].forEach(id => document.getElementById(id).value = '');
+  
+  updateStats();
+  renderTable(contacts);
+}
+
+function assignAllEmails() {
+  const contacts = getContacts();
+  const templates = getTemplates();
+  
+  if (!templates.length) { alert('No templates found! Please run sync in Agent 01 first.'); return; }
+  
+  const usedTracker = {};
+  contacts.forEach(contact => {
+    if (contact.status === 'pending' || !contact.assignedEmailId) {
+      const template = getEmailForIndustry(contact.industry, usedTracker[contact.industry] || []);
+      if (template) {
+        contact.assignedEmailId = template.id;
+        contact.assignedSubject = template.subject;
+        contact.assignedBody = buildEmailBody(template, contact);
+        contact.status = 'assigned';
+        if (!usedTracker[contact.industry]) usedTracker[contact.industry] = [];
+        usedTracker[contact.industry].push(template.id);
+      }
+    }
+  });
+  
+  saveContacts(contacts);
+  updateStats();
+  renderTable(contacts);
+  
+  const assigned = contacts.filter(c=>c.status==='assigned').length;
+  alert(`✅ Emails assigned to ${assigned} contacts!`);
+}
+
+function renderTable(contacts) {
+  document.getElementById('contactCountLabel').textContent = `(${contacts.length} contacts)`;
+  const tbody = document.getElementById('contactTableBody');
+  if (!contacts.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#5a7090;">No contacts yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = contacts.map((c,i) => `
+    <tr>
+      <td style="color:#5a7090">${i+1}</td>
+      <td>${c.firstName}</td>
+      <td>${c.lastName}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.company}</td>
+      <td><span class="industry-badge">${c.industry||'-'}</span></td>
+      <td style="color:var(--sky);font-size:11px;">${c.email}</td>
+      <td>${c.country}</td>
+      <td class="email-preview-cell" onclick="previewEmail('${c.id}')">${c.assignedSubject||'<span style="color:#5a7090">Not assigned</span>'}</td>
+      <td><span class="status-chip ${c.status==='assigned'?'chip-assigned':'chip-pending'}">${c.status||'pending'}</span></td>
+      <td>
+        <button class="btn btn-outline" style="padding:3px 8px;font-size:10px;" onclick="reassignEmail('${c.id}')">↻</button>
+        <button class="btn btn-danger" style="padding:3px 8px;font-size:10px;margin-left:4px;" onclick="deleteContact('${c.id}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function previewEmail(id) {
+  const contacts = getContacts();
+  const c = contacts.find(x=>x.id===id);
+  if (!c || !c.assignedSubject) { alert('No email assigned yet. Click "Assign All Emails" first.'); return; }
+  currentContact = id;
+  document.getElementById('modalTitle').textContent = 'Email Preview';
+  document.getElementById('modalTo').textContent = `${c.firstName} ${c.lastName} <${c.email}> — ${c.company}`;
+  document.getElementById('modalSubject').textContent = c.assignedSubject;
+  document.getElementById('modalBody').textContent = c.assignedBody;
+  document.getElementById('emailModal').classList.add('open');
+}
+
+function reassignEmail(id) {
+  const contacts = getContacts();
+  const c = contacts.find(x=>x.id===id);
+  if (!c) return;
+  const template = getEmailForIndustry(c.industry, c.assignedEmailId ? [c.assignedEmailId] : []);
+  if (template) {
+    c.assignedEmailId = template.id;
+    c.assignedSubject = template.subject;
+    c.assignedBody = buildEmailBody(template, c);
+    c.status = 'assigned';
+    saveContacts(contacts);
+    renderTable(contacts);
+    if (document.getElementById('emailModal').classList.contains('open')) previewEmail(id);
+  }
+  closeModal();
+}
+
+function deleteContact(id) {
+  if (!confirm('Delete this contact?')) return;
+  const contacts = getContacts().filter(c=>c.id!==id);
+  saveContacts(contacts);
+  updateStats();
+  renderTable(contacts);
+}
+
+function closeModal() { document.getElementById('emailModal').classList.remove('open'); }
+
+function searchContacts(q) {
+  const contacts = getContacts();
+  const filtered = q ? contacts.filter(c => 
+    [c.firstName,c.lastName,c.email,c.company,c.industry].join(' ').toLowerCase().includes(q.toLowerCase())
+  ) : contacts;
+  renderTable(filtered);
+}
+
+function clearContacts() {
+  if (!confirm('Clear ALL contacts? This cannot be undone.')) return;
+  saveContacts([]);
+  updateStats();
+  renderTable([]);
+}
+
+function exportContacts() {
+  const contacts = getContacts();
+  if (!contacts.length) { alert('No contacts to export.'); return; }
+  const headers = ['ID','FirstName','LastName','Email','Company','Industry','Country','AssignedSubject','Status','AddedAt'];
+  const rows = contacts.map(c => [c.id,c.firstName,c.lastName,c.email,c.company,c.industry,c.country,`"${(c.assignedSubject||'').replace(/"/g,'""')}"`,c.status,c.addedAt]);
+  const csv = [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `ira_contacts_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+
+function handleFileImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split('\n').filter(l=>l.trim());
+    const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,'').toLowerCase());
+    const contacts = getContacts();
+    const existing = new Set(contacts.map(c=>c.email.toLowerCase()));
+    let added = 0;
+    
+    for (let i=1;i<lines.length;i++) {
+      const vals = lines[i].split(',').map(v=>v.trim().replace(/"/g,''));
+      const row = {};
+      headers.forEach((h,j) => row[h] = vals[j]||'');
+      
+      const email = (row.email||row['email address']||'').toLowerCase();
+      if (!email || existing.has(email)) continue;
+      
+      const contact = {
+        id: Date.now().toString()+i,
+        firstName: row.firstname||row['first name']||row.first||'',
+        lastName: row.lastname||row['last name']||row.last||'',
+        email: email,
+        company: row.company||row['company name']||'',
+        industry: row.industry||row['industry type']||'',
+        country: row.country||'India',
+        status: 'pending',
+        assignedEmailId: null, assignedSubject: null, assignedBody: null,
+        addedAt: new Date().toISOString()
+      };
+      
+      const template = getEmailForIndustry(contact.industry);
+      if (template) {
+        contact.assignedEmailId = template.id; contact.assignedSubject = template.subject;
+        contact.assignedBody = buildEmailBody(template, contact); contact.status = 'assigned';
+      }
+      
+      contacts.push(contact);
+      existing.add(email);
+      added++;
+    }
+    
+    saveContacts(contacts);
+    updateStats();
+    renderTable(contacts);
+    alert(`✅ Imported ${added} new contacts!`);
+  };
+  reader.readAsText(file);
+}
+
+function downloadSampleCSV() {
+  const csv = `FirstName,LastName,Email,Company,Industry,Country
+Rajesh,Kumar,rajesh@techfirm.in,TechFirm Solutions,IT & Technology,India
+Priya,Sharma,priya@realty.com,Prime Realty Group,Real Estate,India
+Vikram,Patel,vikram@mfg.co,Gujarat Manufacturing,Manufacturing,India`;
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ira_sample_contacts.csv'; a.click();
+}
+
+function updateStats() {
+  const contacts = getContacts();
+  const templates = getTemplates();
+  document.getElementById('statContacts').textContent = contacts.length;
+  document.getElementById('statAssigned').textContent = contacts.filter(c=>c.status==='assigned').length;
+  document.getElementById('statPending').textContent = contacts.filter(c=>c.status!=='assigned').length;
+  document.getElementById('statIndustries').textContent = [...new Set(contacts.map(c=>c.industry).filter(Boolean))].length;
+  document.getElementById('statTemplates').textContent = templates.length;
+}
+
+document.getElementById('sampleCSV').onclick = e => { e.preventDefault(); downloadSampleCSV(); };
+populateIndustrySelect();
+updateStats();
+renderTable(getContacts());
+</script>
+</body>
+</html>

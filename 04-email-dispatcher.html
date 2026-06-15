@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRA-04 | Email Dispatcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0d1b4b;--blue:#1565c0;--sky:#29b6f6;--dark:#0a1128;--accent:#00e5ff;--success:#00e676;--warn:#ffd740;--danger:#ff5252;--card:rgba(255,255,255,0.04);--border:rgba(41,182,246,0.2);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:#e0e8f0;font-family:'DM Sans',sans-serif;min-height:100vh;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(41,182,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(41,182,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:24px;}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.logo-badge{width:48px;height:48px;background:linear-gradient(135deg,#1a237e,#00e5ff);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:#fff;}
+.header-title h1{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--sky);}
+.header-title p{font-size:12px;color:#7a8bb0;margin-top:2px;}
+.agent-badge{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--accent);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;}
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.stat-num{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--sky);}
+.stat-label{font-size:11px;color:#7a8bb0;margin-top:4px;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.section-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:#c0cfe0;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all 0.2s;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--sky));color:#fff;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(41,182,246,0.4);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:#c0cfe0;}
+.btn-outline:hover{border-color:var(--sky);color:var(--sky);}
+.btn-success{background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.3);color:var(--success);}
+.btn-danger{background:rgba(255,82,82,0.15);border:1px solid rgba(255,82,82,0.3);color:var(--danger);}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:#7a8bb0;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:#e0e8f0;padding:9px 12px;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;}
+.form-input:focus{outline:none;border-color:var(--sky);}
+.two-col{display:grid;grid-template-columns:380px 1fr;gap:20px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:rgba(21,101,192,0.3);color:var(--sky);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;position:sticky;top:0;z-index:1;}
+td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:#c0cfe0;vertical-align:middle;}
+tr:hover td{background:rgba(41,182,246,0.04);}
+.table-wrap{overflow-x:auto;max-height:400px;overflow-y:auto;}
+.chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;}
+.chip-sent{background:rgba(0,230,118,0.15);color:var(--success);}
+.chip-scheduled{background:rgba(41,182,246,0.15);color:var(--sky);}
+.chip-failed{background:rgba(255,82,82,0.15);color:var(--danger);}
+.chip-reply{background:rgba(255,215,64,0.2);color:var(--warn);}
+.chip-replysent{background:rgba(138,43,226,0.2);color:#ce93d8;}
+.controls-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.live-log{background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;font-size:11px;font-family:monospace;max-height:150px;overflow-y:auto;margin-top:12px;color:#29b6f6;}
+.live-log p{margin:2px 0;}
+.progress-track{background:rgba(255,255,255,0.05);border-radius:4px;height:4px;margin:8px 0;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--sky));border-radius:4px;transition:width 0.5s;}
+.config-note{font-size:11px;color:#ffd740;background:rgba(255,215,64,0.08);border:1px solid rgba(255,215,64,0.2);border-radius:8px;padding:10px;margin-bottom:12px;line-height:1.6;}
+.success-note{font-size:11px;color:var(--success);background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.2);border-radius:8px;padding:10px;margin-bottom:12px;line-height:1.6;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.status-indicator{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;}
+.si-connected{background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse 2s infinite;}
+.si-disconnected{background:#5a7090;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.token-display{background:rgba(0,0,0,0.3);border-radius:6px;padding:8px 12px;font-size:10px;font-family:monospace;color:#00e676;word-break:break-all;margin-top:6px;display:none;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="logo-badge">IRA</div>
+    <div class="header-title">
+      <h1>EMAIL DISPATCHER — AGENT 04</h1>
+      <p>Gmail OAuth2 · Real Send Engine · irainfinite2211@gmail.com</p>
+    </div>
+  </div>
+  <div id="connectionBadge" class="agent-badge"><span class="status-indicator si-disconnected" id="connDot"></span>NOT CONNECTED</div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-num" id="statQueue">0</div><div class="stat-label">In Queue</div></div>
+  <div class="stat-card"><div class="stat-num" id="statSent">0</div><div class="stat-label">Sent</div></div>
+  <div class="stat-card"><div class="stat-num" id="statFailed">0</div><div class="stat-label">Failed</div></div>
+  <div class="stat-card"><div class="stat-num" id="statReplies">0</div><div class="stat-label">Replies</div></div>
+  <div class="stat-card"><div class="stat-num" id="statReplySent">0</div><div class="stat-label">Reply Sent</div></div>
+  <div class="stat-card"><div class="stat-num" id="statScheduledNext">0</div><div class="stat-label">Tomorrow</div></div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="panel">
+      <div class="section-title">Gmail OAuth2 Connection</div>
+      <div id="connStatus" class="config-note">⚠️ Enter your OAuth credentials and connect. The access token will be fetched automatically and stored locally.</div>
+
+      <div class="form-group">
+        <label class="form-label">Gmail Address</label>
+        <input class="form-input" id="gmailAddr" value="irainfinite2211@gmail.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">From Name (shown to recipients)</label>
+        <input class="form-input" id="fromName" value="Harshit Shah — Ira Infinite">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client ID</label>
+        <input class="form-input" id="clientId" placeholder="Paste your OAuth Client ID here" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client Secret</label>
+        <input class="form-input" id="clientSecret" placeholder="Paste your Client Secret here" type="password">
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary" onclick="startOAuth()" id="oauthBtn">🔗 Step 1: Open Google Auth</button>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Step 2: Paste Authorization Code here</label>
+          <input class="form-input" id="authCode" placeholder="Paste the code from Google here...">
+        </div>
+        <button class="btn btn-success" onclick="exchangeCodeForToken()" id="exchangeBtn">✅ Step 2: Exchange Code → Get Token</button>
+        <button class="btn btn-outline" onclick="enableDemoMode()">▶ Demo Mode (simulate sending)</button>
+      </div>
+      <div id="tokenDisplay" class="token-display"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Today's Dispatch Engine</div>
+      <div class="form-group">
+        <label class="form-label">Emails to Send Today (10–20 recommended)</label>
+        <input class="form-input" id="batchSize" type="number" min="1" max="20" value="15">
+        <div style="font-size:11px;color:#5a7090;margin-top:4px;">Sending 10–20/day keeps Gmail spam score low and complies with Google bulk sender guidelines.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-primary" id="dispatchBtn" onclick="dispatchToday()" disabled>📤 Dispatch Today's Emails</button>
+        <button class="btn btn-outline" onclick="checkSentFolder()">🔍 Check Sent & Update Status</button>
+        <button class="btn btn-outline" onclick="scheduleNextBatch()">📅 Preview Tomorrow's Queue</button>
+        <button class="btn btn-danger" onclick="retryFailed()">↺ Retry Failed Emails</button>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="dispatchProgress" style="width:0%"></div></div>
+      <div class="live-log" id="dispatchLog">
+        <p style="color:#5a7090">Ready. Connect Gmail above to begin real sending.</p>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="controls-bar">
+        <select class="form-input" style="width:auto;flex:none;" id="statusFilter" onchange="filterLog(this.value)">
+          <option value="">All Statuses</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="sent">Sent</option>
+          <option value="failed">Failed</option>
+          <option value="reply_received">Reply Received</option>
+          <option value="reply_sent">Reply Sent</option>
+        </select>
+        <button class="btn btn-outline" onclick="exportSentLog()">↓ Export Log</button>
+        <button class="btn btn-danger" onclick="clearLog()">🗑 Clear Log</button>
+      </div>
+      <div class="section-title">Send Log <span id="logCount" style="color:var(--sky);font-size:12px;font-weight:400;margin-left:8px"></span></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Recipient</th><th>Email</th><th>Subject</th><th>Scheduled</th><th>Sent At</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+let isConnected = false;
+let isDemoMode = false;
+let accessToken = null;
+let refreshToken = null;
+let tokenExpiry = null;
+
+const GMAIL_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const GMAIL_SEND_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
+const GMAIL_LIST_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages';
+const REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob';
+
+function getSentLog() { return JSON.parse(localStorage.getItem('ira_sent_log_v1') || '[]'); }
+function saveSentLog(d) { localStorage.setItem('ira_sent_log_v1', JSON.stringify(d)); }
+function getSchedule() { return JSON.parse(localStorage.getItem('ira_schedule_v1') || '[]'); }
+function saveSchedule(d) { localStorage.setItem('ira_schedule_v1', JSON.stringify(d)); }
+function getCreds() { return JSON.parse(localStorage.getItem('ira_gmail_creds') || '{}'); }
+function saveCreds(d) { localStorage.setItem('ira_gmail_creds', JSON.stringify(d)); }
+
+function addLog(msg, color = '#29b6f6') {
+  const log = document.getElementById('dispatchLog');
+  const p = document.createElement('p');
+  p.style.color = color;
+  p.textContent = `[${new Date().toLocaleTimeString('en-IN')}] ${msg}`;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function startOAuth() {
+  const clientId = document.getElementById('clientId').value.trim();
+  if (!clientId) { addLog('⚠️ Enter your Client ID first.', '#ffd740'); return; }
+
+  saveCreds({
+    clientId,
+    clientSecret: document.getElementById('clientSecret').value.trim(),
+    email: document.getElementById('gmailAddr').value.trim(),
+    fromName: document.getElementById('fromName').value.trim()
+  });
+
+  const scope = encodeURIComponent('https://mail.google.com/');
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+  addLog('🔗 Opening Google Auth window...', '#29b6f6');
+  window.open(authUrl, '_blank', 'width=520,height=660');
+  addLog('⏳ After approving, copy the code shown and paste it in Step 2 field above.', '#ffd740');
+}
+
+async function exchangeCodeForToken() {
+  const code = document.getElementById('authCode').value.trim();
+  const creds = getCreds();
+
+  if (!code) { addLog('⚠️ Paste the authorization code first.', '#ffd740'); return; }
+  if (!creds.clientId || !creds.clientSecret) { addLog('⚠️ Client ID and Secret required.', '#ffd740'); return; }
+
+  addLog('🔄 Exchanging code for access token...', '#29b6f6');
+
+  try {
+    const params = new URLSearchParams({
+      code,
+      client_id: creds.clientId,
+      client_secret: creds.clientSecret,
+      redirect_uri: REDIRECT_URI,
+      grant_type: 'authorization_code'
+    });
+
+    const res = await fetch(GMAIL_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+
+    const data = await res.json();
+
+    if (data.access_token) {
+      accessToken = data.access_token;
+      refreshToken = data.refresh_token;
+      tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+      saveCreds({ ...creds, accessToken, refreshToken, tokenExpiry });
+
+      document.getElementById('tokenDisplay').style.display = 'block';
+      document.getElementById('tokenDisplay').textContent = `✅ Token active until: ${new Date(tokenExpiry).toLocaleTimeString('en-IN')} | Refresh token: ${refreshToken ? 'saved' : 'not received'}`;
+
+      setConnected(true);
+      addLog('✅ Gmail connected! Access token received.', '#00e676');
+      addLog(`📧 Sending from: ${creds.email}`, '#00e676');
+      addLog('🚀 You can now dispatch real emails.', '#00e676');
+
+      document.getElementById('connStatus').className = 'success-note';
+      document.getElementById('connStatus').textContent = `✅ Gmail connected as ${creds.email}. Token valid for 1 hour, auto-refreshes.`;
+    } else {
+      addLog(`❌ Token exchange failed: ${data.error_description || data.error || JSON.stringify(data)}`, '#ff5252');
+      addLog('💡 Make sure you used the LATEST auth code. Codes expire in ~10 min.', '#ffd740');
+    }
+  } catch (err) {
+    addLog(`❌ Network error: ${err.message}`, '#ff5252');
+  }
+}
+
+async function refreshAccessToken() {
+  const creds = getCreds();
+  if (!creds.refreshToken) return false;
+
+  try {
+    const params = new URLSearchParams({
+      client_id: creds.clientId,
+      client_secret: creds.clientSecret,
+      refresh_token: creds.refreshToken,
+      grant_type: 'refresh_token'
+    });
+    const res = await fetch(GMAIL_TOKEN_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+    const data = await res.json();
+    if (data.access_token) {
+      accessToken = data.access_token;
+      tokenExpiry = Date.now() + (data.expires_in * 1000);
+      saveCreds({ ...creds, accessToken, tokenExpiry });
+      addLog('🔄 Access token refreshed automatically.', '#29b6f6');
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+async function getValidToken() {
+  if (accessToken && tokenExpiry && Date.now() < tokenExpiry - 60000) return accessToken;
+  const refreshed = await refreshAccessToken();
+  if (refreshed) return accessToken;
+  addLog('⚠️ Token expired. Please reconnect Gmail.', '#ffd740');
+  return null;
+}
+
+function makeEmailRFC822(to, fromName, fromEmail, subject, body) {
+  const emailLines = [
+    `From: ${fromName} <${fromEmail}>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: quoted-printable`,
+    ``,
+    body
+  ];
+  const raw = emailLines.join('\r\n');
+  return btoa(unescape(encodeURIComponent(raw))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function sendSingleEmail(to, subject, body) {
+  const token = await getValidToken();
+  if (!token) return { success: false, error: 'No valid token' };
+
+  const creds = getCreds();
+  const raw = makeEmailRFC822(to, creds.fromName || 'Harshit Shah — Ira Infinite', creds.email || 'irainfinite2211@gmail.com', subject, body);
+
+  try {
+    const res = await fetch(GMAIL_SEND_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw })
+    });
+    const data = await res.json();
+    if (res.ok && data.id) return { success: true, messageId: data.id };
+    return { success: false, error: data.error?.message || JSON.stringify(data) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+async function dispatchToday() {
+  const btn = document.getElementById('dispatchBtn');
+  const prog = document.getElementById('dispatchProgress');
+  btn.disabled = true;
+  prog.style.width = '0%';
+
+  const schedule = getSchedule();
+  const today = new Date().toISOString().split('T')[0];
+  const todayItems = schedule.filter(s => s.dateKey === today && s.status === 'scheduled');
+  const batchSize = parseInt(document.getElementById('batchSize').value) || 15;
+  const batch = todayItems.slice(0, batchSize);
+
+  if (!batch.length) {
+    addLog(`⚠️ No emails scheduled for today (${today}).`, '#ffd740');
+    addLog('👉 Go to Agent 03 and click "Schedule All Unscheduled" first.', '#ffd740');
+    btn.disabled = false;
+    return;
+  }
+
+  addLog(`📤 Starting dispatch: ${batch.length} emails for today...`);
+  const sentLog = getSentLog();
+  let sentCount = 0, failCount = 0;
+
+  for (let i = 0; i < batch.length; i++) {
+    const item = batch[i];
+    prog.style.width = `${((i + 1) / batch.length * 100)}%`;
+    addLog(`📧 Sending to ${item.firstName} ${item.lastName} <${item.email}>...`);
+
+    let result;
+    if (isDemoMode) {
+      await new Promise(r => setTimeout(r, 400));
+      result = { success: Math.random() > 0.03 };
+    } else {
+      result = await sendSingleEmail(item.email, item.subject, item.body);
+      await new Promise(r => setTimeout(r, 800)); // Rate limiting - be gentle with Gmail
+    }
+
+    const logEntry = {
+      id: 'log_' + Date.now() + '_' + i,
+      contactId: item.contactId,
+      recipient: `${item.firstName} ${item.lastName}`,
+      email: item.email,
+      subject: item.subject,
+      company: item.company,
+      industry: item.industry,
+      scheduledDate: item.dateKey,
+      sentAt: result.success ? new Date().toISOString() : null,
+      status: result.success ? 'sent' : 'failed',
+      failReason: result.success ? null : result.error,
+      messageId: result.messageId || null,
+      body: item.body
+    };
+
+    sentLog.push(logEntry);
+
+    const schItem = schedule.find(s => s.contactId === item.contactId);
+    if (schItem) schItem.status = result.success ? 'sent' : 'failed';
+
+    if (result.success) {
+      sentCount++;
+      addLog(`✅ Sent! ${item.firstName} ${item.lastName}`, '#00e676');
+    } else {
+      failCount++;
+      addLog(`❌ Failed: ${item.email} — ${result.error || 'unknown error'}`, '#ff5252');
+    }
+  }
+
+  saveSentLog(sentLog);
+  saveSchedule(schedule);
+  prog.style.width = '100%';
+  addLog(`━━━━━━━━━━━━━━━━━━━━━━━━━━`, '#333');
+  addLog(`📊 Dispatch complete! ✅ Sent: ${sentCount} | ❌ Failed: ${failCount}`, '#ffd740');
+  if (!isDemoMode) addLog(`📬 Check irainfinite2211@gmail.com Sent folder to verify.`, '#29b6f6');
+
+  btn.disabled = false;
+  updateStats();
+  renderLog();
+}
+
+async function checkSentFolder() {
+  addLog('🔍 Checking Gmail sent folder...', '#29b6f6');
+
+  if (isDemoMode) {
+    const log = getSentLog();
+    const schedule = getSchedule();
+    let updated = 0;
+    log.forEach(entry => {
+      if (entry.status === 'scheduled' && new Date(entry.scheduledDate) <= new Date()) {
+        entry.status = 'sent'; entry.sentAt = new Date().toISOString();
+        const s = schedule.find(x => x.contactId === entry.contactId);
+        if (s) s.status = 'sent';
+        updated++;
+      }
+    });
+    saveSentLog(log); saveSchedule(schedule);
+    addLog(`✅ ${updated} statuses updated.`, '#00e676');
+    updateStats(); renderLog(); return;
+  }
+
+  const token = await getValidToken();
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${GMAIL_LIST_URL}?labelIds=SENT&maxResults=50`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const sentIds = new Set((data.messages || []).map(m => m.id));
+    const log = getSentLog();
+    let updated = 0;
+    log.forEach(entry => {
+      if (entry.messageId && sentIds.has(entry.messageId) && entry.status !== 'sent') {
+        entry.status = 'sent'; entry.sentAt = new Date().toISOString(); updated++;
+      }
+    });
+    saveSentLog(log);
+    addLog(`✅ Sent folder checked. ${sentIds.size} messages found. ${updated} updated.`, '#00e676');
+    updateStats(); renderLog();
+  } catch (err) {
+    addLog(`❌ Error checking sent folder: ${err.message}`, '#ff5252');
+  }
+}
+
+function scheduleNextBatch() {
+  const schedule = getSchedule();
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const tmBatch = schedule.filter(s => s.dateKey === tomorrow && s.status === 'scheduled');
+  addLog(`📅 Tomorrow (${tomorrow}): ${tmBatch.length} emails queued.`, '#00e676');
+  if (tmBatch.length === 0) addLog('👉 Go to Agent 03 to schedule more contacts.', '#ffd740');
+}
+
+async function retryFailed() {
+  const log = getSentLog();
+  const failed = log.filter(l => l.status === 'failed');
+  if (!failed.length) { addLog('✅ No failed emails to retry.'); return; }
+  addLog(`↺ Retrying ${failed.length} failed emails...`, '#ffd740');
+
+  let retried = 0;
+  for (const entry of failed) {
+    let result;
+    if (isDemoMode) { result = { success: true }; }
+    else { result = await sendSingleEmail(entry.email, entry.subject, entry.body); await new Promise(r => setTimeout(r, 800)); }
+    if (result.success) { entry.status = 'sent'; entry.sentAt = new Date().toISOString(); entry.failReason = null; retried++; addLog(`✅ Retry OK: ${entry.email}`, '#00e676'); }
+    else { addLog(`❌ Still failing: ${entry.email}`, '#ff5252'); }
+  }
+  saveSentLog(log);
+  addLog(`Retry complete. ${retried}/${failed.length} succeeded.`, '#ffd740');
+  updateStats(); renderLog();
+}
+
+function markReply(id) {
+  const log = getSentLog();
+  const entry = log.find(l => l.id === id);
+  if (entry) { entry.status = 'reply_received'; entry.replyAt = new Date().toISOString(); saveSentLog(log); updateStats(); renderLog(); addLog(`💬 Reply received marked for: ${entry.email}`, '#ffd740'); }
+}
+
+function markReplySent(id) {
+  const log = getSentLog();
+  const entry = log.find(l => l.id === id);
+  if (entry) { entry.status = 'reply_sent'; entry.replySentAt = new Date().toISOString(); saveSentLog(log); updateStats(); renderLog(); addLog(`✉️ Reply sent marked for: ${entry.email}`, '#ce93d8'); }
+}
+
+function enableDemoMode() {
+  isDemoMode = true; setConnected(true);
+  document.getElementById('connStatus').className = 'config-note';
+  document.getElementById('connStatus').textContent = '▶ Demo Mode — emails are simulated, NOT actually sent. Use this for testing only.';
+  addLog('▶ Demo Mode enabled. Real sending is disabled.', '#ffd740');
+}
+
+function setConnected(val) {
+  isConnected = val;
+  const dot = document.getElementById('connDot');
+  const badge = document.getElementById('connectionBadge');
+  dot.className = val ? 'status-indicator si-connected' : 'status-indicator si-disconnected';
+  badge.innerHTML = `<span class="status-indicator ${val ? 'si-connected' : 'si-disconnected'}" id="connDot"></span>${isDemoMode ? 'DEMO MODE' : '✅ GMAIL CONNECTED'}`;
+  document.getElementById('dispatchBtn').disabled = !val;
+}
+
+function renderLog(filtered = null) {
+  const log = filtered || getSentLog();
+  document.getElementById('logCount').textContent = `(${log.length} entries)`;
+  const tbody = document.getElementById('logBody');
+  if (!log.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#5a7090;">No send log yet.</td></tr>'; return; }
+  tbody.innerHTML = [...log].reverse().slice(0, 200).map((l, i) => {
+    const chipClass = { sent: 'chip-sent', failed: 'chip-failed', scheduled: 'chip-scheduled', reply_received: 'chip-reply', reply_sent: 'chip-replysent' }[l.status] || 'chip-scheduled';
+    const sentTime = l.sentAt ? new Date(l.sentAt).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    return `<tr>
+      <td style="color:#5a7090">${i + 1}</td>
+      <td>${l.recipient}</td>
+      <td style="color:var(--sky);font-size:11px;">${l.email}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.subject || '-'}</td>
+      <td style="font-family:'Rajdhani',sans-serif;color:var(--warn);">${l.scheduledDate || '—'}</td>
+      <td style="font-size:11px;color:#5a7090">${sentTime}</td>
+      <td><span class="chip ${chipClass}">${l.status.replace('_', ' ')}</span></td>
+      <td style="white-space:nowrap;">
+        ${l.status === 'sent' ? `<button class="btn" style="padding:2px 7px;font-size:10px;background:rgba(255,215,64,0.1);border:1px solid rgba(255,215,64,0.3);color:var(--warn);" onclick="markReply('${l.id}')">Reply Rcvd</button>` : ''}
+        ${l.status === 'reply_received' ? `<button class="btn" style="padding:2px 7px;font-size:10px;background:rgba(138,43,226,0.15);border:1px solid rgba(138,43,226,0.3);color:#ce93d8;" onclick="markReplySent('${l.id}')">Reply Sent</button>` : ''}
+        ${l.status === 'failed' ? `<button class="btn btn-outline" style="padding:2px 7px;font-size:10px;" onclick="markReply('${l.id}')">↺ Retry</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterLog(status) { const log = getSentLog(); renderLog(status ? log.filter(l => l.status === status) : log); }
+
+function clearLog() { if (!confirm('Clear entire send log?')) return; saveSentLog([]); updateStats(); renderLog(); }
+
+function exportSentLog() {
+  const log = getSentLog();
+  if (!log.length) { alert('No log to export.'); return; }
+  const headers = ['ID', 'Recipient', 'Email', 'Company', 'Industry', 'Subject', 'ScheduledDate', 'SentAt', 'Status', 'FailReason', 'MessageID'];
+  const rows = log.map(l => [l.id, l.recipient, l.email, l.company || '', l.industry || '', `"${(l.subject || '').replace(/"/g, '""')}"`, l.scheduledDate || '', l.sentAt || '', l.status, l.failReason || '', l.messageId || '']);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `ira_sent_log_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+
+function updateStats() {
+  const log = getSentLog(); const schedule = getSchedule();
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  document.getElementById('statQueue').textContent = schedule.filter(s => s.status === 'scheduled').length;
+  document.getElementById('statSent').textContent = log.filter(l => ['sent', 'reply_received', 'reply_sent'].includes(l.status)).length;
+  document.getElementById('statFailed').textContent = log.filter(l => l.status === 'failed').length;
+  document.getElementById('statReplies').textContent = log.filter(l => l.status === 'reply_received').length;
+  document.getElementById('statReplySent').textContent = log.filter(l => l.status === 'reply_sent').length;
+  document.getElementById('statScheduledNext').textContent = schedule.filter(s => s.dateKey === tomorrow && s.status === 'scheduled').length;
+}
+
+// Auto-restore saved credentials on load
+(function init() {
+  const creds = getCreds();
+  if (creds.clientId) document.getElementById('clientId').value = creds.clientId;
+  if (creds.clientSecret) document.getElementById('clientSecret').value = creds.clientSecret;
+  if (creds.email) document.getElementById('gmailAddr').value = creds.email;
+  if (creds.fromName) document.getElementById('fromName').value = creds.fromName;
+
+  if (creds.accessToken && creds.tokenExpiry && Date.now() < creds.tokenExpiry) {
+    accessToken = creds.accessToken;
+    refreshToken = creds.refreshToken;
+    tokenExpiry = creds.tokenExpiry;
+    setConnected(true);
+    document.getElementById('connStatus').className = 'success-note';
+    document.getElementById('connStatus').textContent = `✅ Gmail reconnected as ${creds.email}. Token valid. Ready to send.`;
+    document.getElementById('tokenDisplay').style.display = 'block';
+    document.getElementById('tokenDisplay').textContent = `Token expires: ${new Date(tokenExpiry).toLocaleTimeString('en-IN')}`;
+    addLog('✅ Restored saved Gmail session. Ready to dispatch.', '#00e676');
+  } else if (creds.refreshToken) {
+    refreshToken = creds.refreshToken;
+    addLog('🔄 Saved session found. Refreshing token...', '#29b6f6');
+    refreshAccessToken().then(ok => {
+      if (ok) { setConnected(true); document.getElementById('connStatus').className = 'success-note'; document.getElementById('connStatus').textContent = `✅ Gmail reconnected as ${creds.email}. Ready to send.`; addLog('✅ Token refreshed. Ready to dispatch.', '#00e676'); }
+      else { addLog('⚠️ Token refresh failed. Please re-authenticate.', '#ffd740'); }
+    });
+  }
+
+  updateStats();
+  renderLog();
+
+  // Auto-refresh token every 45 min
+  setInterval(async () => { if (refreshToken && (!tokenExpiry || Date.now() > tokenExpiry - 120000)) await refreshAccessToken(); }, 45 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

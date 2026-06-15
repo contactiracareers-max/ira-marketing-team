@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRA-01 | Data Sourcing Expert</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d1b4b;
+  --blue: #1565c0;
+  --sky: #29b6f6;
+  --light: #e3f2fd;
+  --white: #ffffff;
+  --dark: #0a1128;
+  --accent: #00e5ff;
+  --success: #00e676;
+  --warn: #ffd740;
+  --danger: #ff5252;
+  --card: rgba(255,255,255,0.04);
+  --border: rgba(41,182,246,0.2);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background: var(--dark); color: #e0e8f0; font-family: 'DM Sans', sans-serif; min-height:100vh; overflow-x:hidden; }
+.bg-grid { position:fixed; inset:0; background-image: linear-gradient(rgba(41,182,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(41,182,246,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events:none; z-index:0; }
+.container { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:24px; }
+
+/* Header */
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.logo-area { display:flex; align-items:center; gap:16px; }
+.logo-badge { width:48px; height:48px; background:linear-gradient(135deg,var(--blue),var(--sky)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:#fff; }
+.header-title h1 { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--sky); }
+.header-title p { font-size:12px; color:#7a8bb0; margin-top:2px; }
+.agent-badge { background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); color:var(--accent); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; }
+
+/* Stats Row */
+.stats-row { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:28px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+.stat-num { font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; color:var(--sky); }
+.stat-label { font-size:11px; color:#7a8bb0; margin-top:4px; }
+
+/* Controls */
+.controls { display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap; align-items:center; }
+.btn { display:flex; align-items:center; gap:8px; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; transition:all 0.2s; }
+.btn-primary { background:linear-gradient(135deg,var(--blue),var(--sky)); color:#fff; }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(41,182,246,0.4); }
+.btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:#c0cfe0; }
+.btn-outline:hover { border-color:var(--sky); color:var(--sky); }
+.select-ctrl { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:#c0cfe0; padding:10px 14px; border-radius:8px; font-size:14px; cursor:pointer; }
+
+/* Sync Progress */
+.sync-bar { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:28px; display:none; }
+.sync-bar.active { display:block; }
+.sync-title { font-size:13px; color:var(--sky); margin-bottom:12px; font-weight:500; }
+.progress-track { background:rgba(255,255,255,0.05); border-radius:4px; height:6px; margin-bottom:8px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--blue),var(--sky)); border-radius:4px; transition:width 0.3s; }
+.sync-log { font-size:12px; color:#5a7090; max-height:80px; overflow-y:auto; }
+.sync-log p { margin:2px 0; }
+
+/* Industry Grid */
+.section-title { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:#c0cfe0; margin-bottom:16px; letter-spacing:1px; text-transform:uppercase; }
+.industry-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
+.industry-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; cursor:pointer; transition:all 0.2s; }
+.industry-card:hover, .industry-card.active { border-color:var(--sky); background:rgba(41,182,246,0.08); }
+.ind-name { font-size:13px; font-weight:500; color:#c0cfe0; margin-bottom:6px; }
+.ind-meta { display:flex; justify-content:space-between; font-size:11px; color:#5a7090; }
+.ind-count { color:var(--sky); font-weight:700; }
+
+/* Email Library */
+.library-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.library-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.email-list { display:flex; flex-direction:column; gap:10px; max-height:400px; overflow-y:auto; }
+.email-item { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:12px 16px; }
+.email-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.email-subject { font-size:13px; font-weight:500; color:#c0cfe0; }
+.email-tags { display:flex; gap:6px; }
+.tag { font-size:10px; padding:2px 8px; border-radius:10px; }
+.tag-industry { background:rgba(21,101,192,0.3); color:#90caf9; }
+.tag-type { background:rgba(0,229,255,0.15); color:var(--accent); }
+.email-preview { font-size:12px; color:#5a7090; line-height:1.5; }
+.perf-indicator { display:flex; align-items:center; gap:4px; font-size:11px; }
+.perf-dot { width:6px; height:6px; border-radius:50%; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* Status dot */
+.status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+.dot-active { background:var(--success); box-shadow:0 0 6px var(--success); animation:pulse 2s infinite; }
+.dot-idle { background:#5a7090; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.last-sync { font-size:11px; color:#5a7090; }
+.empty-state { text-align:center; padding:40px; color:#5a7090; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-badge">IRA</div>
+    <div class="header-title">
+      <h1>DATA SOURCING EXPERT — AGENT 01</h1>
+      <p>Email & WhatsApp Template Intelligence Library</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <span class="last-sync" id="lastSyncTime">Last sync: Never</span>
+    <div class="agent-badge"><span class="status-dot dot-idle" id="statusDot"></span>STANDBY</div>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total Templates</div></div>
+  <div class="stat-card"><div class="stat-num" id="statIndustries">0</div><div class="stat-label">Industries Covered</div></div>
+  <div class="stat-card"><div class="stat-num" id="statEmail">0</div><div class="stat-label">Email Variants</div></div>
+  <div class="stat-card"><div class="stat-num" id="statWhatsapp">0</div><div class="stat-label">WhatsApp Variants</div></div>
+  <div class="stat-card"><div class="stat-num" id="statPerformers">0</div><div class="stat-label">High Performers</div></div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-primary" id="syncBtn" onclick="runSync()">⚡ SYNC NOW — Refresh Library</button>
+  <button class="btn btn-outline" onclick="exportLibrary()">↓ Export Library</button>
+  <select class="select-ctrl" id="filterIndustry" onchange="filterTemplates()">
+    <option value="">All Industries</option>
+  </select>
+  <select class="select-ctrl" id="filterType" onchange="filterTemplates()">
+    <option value="">All Types</option>
+    <option value="email">Email</option>
+    <option value="whatsapp">WhatsApp</option>
+  </select>
+  <select class="select-ctrl" id="filterTone" onchange="filterTemplates()">
+    <option value="">All Tones</option>
+    <option value="formal">Formal</option>
+    <option value="conversational">Conversational</option>
+    <option value="urgent">Urgency-Led</option>
+    <option value="value">Value-Led</option>
+  </select>
+</div>
+
+<div class="sync-bar" id="syncBar">
+  <div class="sync-title" id="syncTitle">🔄 Syncing intelligence library...</div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="sync-log" id="syncLog"></div>
+</div>
+
+<div class="section-title">Industry Coverage Map</div>
+<div class="industry-grid" id="industryGrid"></div>
+
+<div class="library-panel">
+  <div class="library-header">
+    <div class="section-title" style="margin:0">Template Library <span id="templateCount" style="color:var(--sky);font-size:13px;font-weight:400;margin-left:8px"></span></div>
+    <button class="btn btn-outline" onclick="addManualTemplate()" style="padding:6px 14px;font-size:12px;">+ Add Manual</button>
+  </div>
+  <div class="email-list" id="emailList">
+    <div class="empty-state">No templates yet. Click SYNC NOW to populate the library.</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const BNI_INDUSTRIES = ['IT & Technology','Real Estate','Manufacturing','Finance & Banking','Healthcare','Education','Retail & E-commerce','Logistics & Supply Chain','FMCG & Consumer Goods','Legal Services','Marketing & Advertising','Construction','Hospitality & Tourism','Automotive','Media & Entertainment','Consulting & Professional Services','Agriculture','Energy & Utilities','Pharmaceuticals','Insurance'];
+
+const EMAIL_TEMPLATES_BY_INDUSTRY = {
+  'IT & Technology': [
+    { subject:'Is Your Tech Stack Actually Slowing You Down?', preview:'Most IT companies are running 30% slower than they could be due to unoptimised workflows. Here\'s what we found working with 50+ tech firms...', tone:'value', type:'email' },
+    { subject:'AI Integration Checklist for IT Leaders in 2025', preview:'We\'ve helped 20+ IT firms go from "AI curious" to "AI operational" in under 90 days. The gap isn\'t tools — it\'s the implementation strategy...', tone:'formal', type:'email' },
+    { subject:'Your Team Has the Skills. Do They Have the Clarity?', preview:'Technical excellence alone doesn\'t scale businesses. Leadership gaps in IT cos cost ₹40L+ annually in missed delivery and attrition...', tone:'conversational', type:'email' },
+    { subject:'Quick thought on your tech team\'s performance', preview:'Hi [Name], I was reviewing how IT firms in [City] are navigating the AI shift and had a thought specific to [Company]...', tone:'conversational', type:'whatsapp' },
+    { subject:'3 AI wins IT companies are getting in 90 days', preview:'Not theory — actual implementation wins: automated testing pipelines, AI-assisted code review, intelligent project scoping...', tone:'value', type:'whatsapp' },
+  ],
+  'Real Estate': [
+    { subject:'How Top Real Estate Firms Are Closing 40% Faster', preview:'The firms winning in today\'s market aren\'t just better at sales — they\'ve transformed their internal systems. Here\'s the blueprint...', tone:'value', type:'email' },
+    { subject:'Your Agents Are Your Biggest Asset. Are They Growing?', preview:'Real estate is a relationship business. Yet most firms invest zero in their agents\' communication and leadership capabilities...', tone:'conversational', type:'email' },
+    { subject:'AI is Changing Real Estate — Here\'s the Smart Play', preview:'From AI-assisted property matching to automated follow-up sequences — the firms implementing now will dominate the next 3 years...', tone:'urgent', type:'email' },
+    { subject:'Thought you\'d find this useful — RE market insight', preview:'Hi [Name], given [Company]\'s focus on [area], this AI-powered lead nurturing approach is getting 3x conversion for similar firms...', tone:'conversational', type:'whatsapp' },
+  ],
+  'Manufacturing': [
+    { subject:'The Hidden Cost of People Underperformance in Manufacturing', preview:'On the factory floor, 1% efficiency loss = lakhs in annual waste. But the bigger losses happen in the boardroom and team meetings...', tone:'formal', type:'email' },
+    { subject:'AI + Manufacturing: A Practical Implementation Guide', preview:'Not theoretical — we\'ve implemented AI in live manufacturing environments across Gujarat and Maharashtra. Here\'s what works...', tone:'formal', type:'email' },
+    { subject:'Is Your Leadership Pipeline Ready for the Next Decade?', preview:'Manufacturing firms that invest in leadership development today will be the ones with succession clarity and cultural strength tomorrow...', tone:'value', type:'email' },
+    { subject:'Quick question about [Company]\'s operations efficiency', preview:'Hi [Name], working with manufacturers in [City] — found a pattern worth 15-20% overhead reduction. 5 minutes to share?', tone:'conversational', type:'whatsapp' },
+  ],
+  'Finance & Banking': [
+    { subject:'Compliance Is Not Your Competitive Advantage. This Is.', preview:'Every finance firm has compliance. The ones growing 3x faster have built cultures of communication excellence and strategic clarity...', tone:'formal', type:'email' },
+    { subject:'AI in Finance: Beyond Chatbots and Robo-Advisory', preview:'We\'re helping finance firms use AI for internal workflow automation, decision intelligence, and client experience design...', tone:'formal', type:'email' },
+    { subject:'The Leadership Gap Nobody Talks About in Financial Services', preview:'Senior leaders are technically exceptional. But the critical skill gaps in communication, influence, and strategic execution are costing firms...', tone:'value', type:'email' },
+  ],
+  'Healthcare': [
+    { subject:'When Clinical Excellence Meets Communication Breakdown', preview:'Healthcare teams are brilliant clinically. The friction happens in inter-department communication, leadership alignment, and change management...', tone:'formal', type:'email' },
+    { subject:'AI in Healthcare Operations: Ethical, Practical, Proven', preview:'From appointment scheduling automation to AI-assisted patient communication — here\'s how healthcare orgs are implementing responsibly...', tone:'formal', type:'email' },
+  ],
+  'Education': [
+    { subject:'Your Institution\'s Biggest Asset Is Underinvested', preview:'Faculty development, administrative communication, and leadership capacity — the three pillars most educational institutions ignore...', tone:'conversational', type:'email' },
+    { subject:'AI in Education: Transforming Administration, Not Just Learning', preview:'Beyond EdTech — AI transformation for school and college administration, faculty management, and parent communication...', tone:'value', type:'email' },
+  ],
+  'Retail & E-commerce': [
+    { subject:'Retail Teams That Communicate Win. Here\'s the Proof.', preview:'The retail firms growing 50%+ YoY aren\'t just outmarketing competitors. They\'ve built extraordinary internal communication cultures...', tone:'value', type:'email' },
+    { subject:'AI-Powered Retail: Inventory to Customer Experience', preview:'End-to-end AI transformation for retail — from demand forecasting to personalised customer journeys to staff performance...', tone:'formal', type:'email' },
+  ],
+  'Logistics & Supply Chain': [
+    { subject:'The Human Factor in Logistics: Underestimated, Undermined', preview:'Technology solves route optimisation. Leadership development solves the coordination, ownership, and escalation failures that cost you daily...', tone:'value', type:'email' },
+    { subject:'AI Transformation in Logistics: A Phased Approach', preview:'We\'ve helped logistics firms integrate AI into operations without disruption. A structured 6-month roadmap that sticks...', tone:'formal', type:'email' },
+  ],
+  'FMCG & Consumer Goods': [
+    { subject:'FMCG in 2025: The Brands Winning Are Built on Teams', preview:'Product innovation matters. Distribution matters more. But the firms outpacing the market have cracked team excellence...', tone:'conversational', type:'email' },
+    { subject:'From Distributor Alignment to Consumer Intelligence: AI\'s Role', preview:'AI is transforming FMCG — not just in marketing but in supply chain coordination, distributor communication, and market sensing...', tone:'formal', type:'email' },
+  ],
+  'Legal Services': [
+    { subject:'Client Retention in Legal Services Starts With Communication', preview:'Legal excellence is table stakes. The firms retaining and growing client relationships have invested in communication transformation...', tone:'formal', type:'email' },
+    { subject:'Managing a Law Firm Like a Business: The Missing Piece', preview:'Legal practice management is evolving. AI for document handling, client communication, and firm administration is no longer optional...', tone:'formal', type:'email' },
+  ],
+  'Marketing & Advertising': [
+    { subject:'Your Campaigns Are Only as Good as Your Team\'s Clarity', preview:'The most creative agencies lose to less creative ones because of internal communication breakdowns. Here\'s how to fix that...', tone:'conversational', type:'email' },
+    { subject:'AI in Creative Agencies: Amplify, Don\'t Replace', preview:'We help agencies integrate AI into workflows — briefing, production, reporting — without losing the human creative edge...', tone:'value', type:'email' },
+  ],
+  'Construction': [
+    { subject:'Construction Projects Fail in the Meeting Room, Not on Site', preview:'90% of project overruns trace back to communication failures, unclear ownership, and misaligned leadership. Here\'s the data...', tone:'formal', type:'email' },
+    { subject:'AI for Construction Project Management: Practical & Proven', preview:'From site documentation to subcontractor coordination — AI tools are transforming construction project delivery...', tone:'formal', type:'email' },
+  ],
+  'Hospitality & Tourism': [
+    { subject:'Guest Experience Starts With Team Experience', preview:'The hotels and hospitality businesses delivering extraordinary guest journeys have one thing in common: extraordinary team culture...', tone:'conversational', type:'email' },
+    { subject:'AI in Hospitality: Personalisation at Scale', preview:'From AI-driven personalisation to revenue management — hospitality businesses implementing now are building decisive competitive advantage...', tone:'value', type:'email' },
+  ],
+  'Automotive': [
+    { subject:'Dealerships That Train Their Teams Outsell by 3x', preview:'Product knowledge is standard. Communication skills, negotiation mastery, and leadership development? That\'s where the gap lives...', tone:'value', type:'email' },
+    { subject:'AI in Automotive: From Showroom to Service Bay', preview:'Intelligent lead management, service appointment AI, and dealership performance dashboards — the future is now...', tone:'formal', type:'email' },
+  ],
+  'Consulting & Professional Services': [
+    { subject:'Your Consultants Are Brilliant. Are They Exceptional Communicators?', preview:'The consulting firms commanding premium fees and retaining top clients have invested heavily in communication excellence at all levels...', tone:'formal', type:'email' },
+    { subject:'AI-Native Consulting: How Top Firms Are Transforming Delivery', preview:'Proposal automation, research intelligence, and AI-powered client analytics — the consulting firms of 2025 look very different...', tone:'formal', type:'email' },
+  ],
+  'Agriculture': [
+    { subject:'AgriTech Is Here. Is Your Organisation Ready?', preview:'Technology adoption in agriculture requires as much change management as it does technical skill. Here\'s how to get your teams there...', tone:'conversational', type:'email' },
+    { subject:'AI for Agricultural Business Operations', preview:'Supply chain optimisation, demand forecasting, and farmer communication — AI tools purpose-built for agricultural enterprises...', tone:'formal', type:'email' },
+  ],
+  'Energy & Utilities': [
+    { subject:'Safety Culture and Leadership: Two Sides of the Same Coin', preview:'Organisations with exceptional safety records aren\'t just well-trained technically — they have extraordinary leadership and communication cultures...', tone:'formal', type:'email' },
+    { subject:'AI in Energy: Operational Intelligence for Complex Systems', preview:'Predictive maintenance, grid optimisation intelligence, and AI-assisted compliance — the energy sector transformation roadmap...', tone:'formal', type:'email' },
+  ],
+  'Pharmaceuticals': [
+    { subject:'Regulatory Compliance Is Not Enough to Win in Pharma', preview:'The pharma firms attracting talent and retaining clients have built cultures beyond compliance — cultures of leadership excellence...', tone:'formal', type:'email' },
+    { subject:'AI in Pharma Operations: From R&D to Distribution', preview:'Clinical trial management, supply chain intelligence, and compliance automation — AI is reshaping pharmaceutical operations...', tone:'formal', type:'email' },
+  ],
+  'Insurance': [
+    { subject:'Insurance Is a Trust Business. Trust Is Built on Communication.', preview:'The agencies and insurers growing fastest have invested significantly in their teams\' communication and relationship skills...', tone:'conversational', type:'email' },
+    { subject:'AI for Insurance: Claims, Underwriting, and Customer Experience', preview:'Intelligent claims processing, risk assessment AI, and personalised customer communication — the insurance transformation roadmap...', tone:'formal', type:'email' },
+  ]
+};
+
+// Additional generic templates for all industries
+const GENERIC_TEMPLATES = [
+  { subject:'One Question Before We Talk Business', preview:'[Name], before I share what we do, I want to ask: what\'s the single biggest people or operational challenge you\'re navigating right now?', tone:'conversational', type:'email' },
+  { subject:'The Kurukshetra Workshop — 1 Day That Changes Everything', preview:'We run an experiential workshop that\'s transformed 20,000+ professionals. Not training. Not theory. A day of real transformation...', tone:'value', type:'email' },
+  { subject:'What 250+ Workshops Taught Us About Business Transformation', preview:'After 250 workshops across 10+ industries, we\'ve identified the 3 non-negotiable elements of lasting organisational transformation...', tone:'formal', type:'email' },
+  { subject:'6 Months to Infinite Transformation', preview:'Our structured 6-month engagement framework has been designed to create lasting change — not just a report and a handshake...', tone:'value', type:'email' },
+  { subject:'सर्वे सफलाः भवन्ति — May All Achieve Success', preview:'This is the philosophy that drives everything we do at Ira Infinite. It\'s not a tagline — it\'s our operating principle...', tone:'conversational', type:'email' },
+  { subject:'Your competitors are already implementing AI. Here\'s what you do.', preview:'This isn\'t fear-mongering — it\'s market reality. The question isn\'t whether AI will reshape your industry. It\'s whether you lead or follow...', tone:'urgent', type:'email' },
+  { subject:'WhatsApp: Quick insight for [Company]', preview:'Hi [Name] 👋 I help businesses like [Company] unlock 2-3x performance through AI + people transformation. One question — what\'s your biggest bottleneck right now?', tone:'conversational', type:'whatsapp' },
+  { subject:'WhatsApp: Kurukshetra Workshop invitation', preview:'Hi [Name], we\'re running our flagship Kurukshetra workshop in [City] — 1 day that\'s transformed 20K+ professionals. Reserved a spot for you. Interested?', tone:'value', type:'whatsapp' },
+];
+
+function getTemplates() {
+  return JSON.parse(localStorage.getItem('ira_templates_v1') || '[]');
+}
+function saveTemplates(data) {
+  localStorage.setItem('ira_templates_v1', JSON.stringify(data));
+}
+
+function populateIndustryFilter() {
+  const sel = document.getElementById('filterIndustry');
+  BNI_INDUSTRIES.forEach(ind => {
+    const opt = document.createElement('option');
+    opt.value = ind; opt.textContent = ind;
+    sel.appendChild(opt);
+  });
+}
+
+function updateStats() {
+  const templates = getTemplates();
+  document.getElementById('statTotal').textContent = templates.length;
+  const industries = [...new Set(templates.map(t => t.industry))];
+  document.getElementById('statIndustries').textContent = industries.length;
+  document.getElementById('statEmail').textContent = templates.filter(t=>t.type==='email').length;
+  document.getElementById('statWhatsapp').textContent = templates.filter(t=>t.type==='whatsapp').length;
+  document.getElementById('statPerformers').textContent = templates.filter(t=>t.performance==='high').length;
+  renderIndustryGrid();
+  renderTemplateList();
+}
+
+function renderIndustryGrid() {
+  const templates = getTemplates();
+  const grid = document.getElementById('industryGrid');
+  grid.innerHTML = '';
+  BNI_INDUSTRIES.forEach(ind => {
+    const count = templates.filter(t=>t.industry===ind || t.industry==='All').length;
+    const indSpecific = templates.filter(t=>t.industry===ind).length;
+    const div = document.createElement('div');
+    div.className = 'industry-card';
+    div.onclick = () => { document.getElementById('filterIndustry').value = ind; filterTemplates(); };
+    div.innerHTML = `<div class="ind-name">${ind}</div><div class="ind-meta"><span>${indSpecific} specific</span><span class="ind-count">${count} total</span></div>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderTemplateList(filtered = null) {
+  const templates = filtered || getTemplates();
+  const list = document.getElementById('emailList');
+  document.getElementById('templateCount').textContent = `(${templates.length} templates)`;
+  if (!templates.length) {
+    list.innerHTML = '<div class="empty-state">No templates found. Click SYNC NOW to populate.</div>';
+    return;
+  }
+  list.innerHTML = templates.slice(0,100).map((t,i) => `
+    <div class="email-item">
+      <div class="email-item-header">
+        <span class="email-subject">${t.subject}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="email-tags">
+            <span class="tag tag-industry">${t.industry||'All'}</span>
+            <span class="tag tag-type">${t.type||'email'}</span>
+            <span class="tag" style="background:rgba(${t.tone==='urgent'?'255,82,82':'0,230,118'},0.15);color:${t.tone==='urgent'?'#ff5252':'#00e676'}">${t.tone||'formal'}</span>
+          </div>
+          <div class="perf-indicator">
+            <div class="perf-dot" style="background:${t.performance==='high'?'#00e676':t.performance==='medium'?'#ffd740':'#5a7090'}"></div>
+            <span style="font-size:10px;color:#5a7090">${t.performance||'new'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="email-preview">${t.preview}</div>
+    </div>
+  `).join('');
+}
+
+function filterTemplates() {
+  const industry = document.getElementById('filterIndustry').value;
+  const type = document.getElementById('filterType').value;
+  const tone = document.getElementById('filterTone').value;
+  let templates = getTemplates();
+  if (industry) templates = templates.filter(t => t.industry === industry || t.industry === 'All');
+  if (type) templates = templates.filter(t => t.type === type);
+  if (tone) templates = templates.filter(t => t.tone === tone);
+  renderTemplateList(templates);
+}
+
+async function runSync() {
+  const btn = document.getElementById('syncBtn');
+  const bar = document.getElementById('syncBar');
+  const dot = document.getElementById('statusDot');
+  const fill = document.getElementById('progressFill');
+  const log = document.getElementById('syncLog');
+  const title = document.getElementById('syncTitle');
+  
+  btn.disabled = true; bar.classList.add('active');
+  dot.className = 'status-dot dot-active';
+  document.querySelector('.agent-badge').textContent = 'SYNCING';
+  log.innerHTML = '';
+  
+  const existing = getTemplates();
+  const existingIds = new Set(existing.map(t => t.id));
+  let newTemplates = [...existing];
+  let added = 0;
+  
+  const addLog = (msg) => {
+    const p = document.createElement('p');
+    p.textContent = `▶ ${msg}`;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
+  };
+  
+  // Process each industry
+  const industries = Object.keys(EMAIL_TEMPLATES_BY_INDUSTRY);
+  for (let i = 0; i < industries.length; i++) {
+    const ind = industries[i];
+    title.textContent = `🔄 Processing: ${ind}...`;
+    fill.style.width = `${((i+1)/industries.length*70)}%`;
+    
+    const templates = EMAIL_TEMPLATES_BY_INDUSTRY[ind];
+    for (const t of templates) {
+      const id = `${ind}_${t.subject}`.replace(/\s/g,'_').substring(0,60);
+      if (!existingIds.has(id)) {
+        newTemplates.push({ id, industry: ind, ...t, performance: 'new', created: new Date().toISOString(), used: 0, replies: 0 });
+        existingIds.add(id);
+        added++;
+      }
+    }
+    addLog(`${ind}: ${templates.length} templates verified`);
+    await new Promise(r => setTimeout(r, 80));
+  }
+  
+  // Add generic templates
+  title.textContent = '🔄 Adding cross-industry templates...';
+  fill.style.width = '80%';
+  for (const t of GENERIC_TEMPLATES) {
+    const id = `ALL_${t.subject}`.replace(/\s/g,'_').substring(0,60);
+    if (!existingIds.has(id)) {
+      newTemplates.push({ id, industry: 'All', ...t, performance: 'new', created: new Date().toISOString(), used: 0, replies: 0 });
+      added++;
+    }
+  }
+  
+  fill.style.width = '95%';
+  title.textContent = '✅ Sync complete!';
+  addLog(`Sync complete. ${added} new templates added. Total: ${newTemplates.length}`);
+  
+  saveTemplates(newTemplates);
+  localStorage.setItem('ira_last_sync', new Date().toISOString());
+  document.getElementById('lastSyncTime').textContent = `Last sync: ${new Date().toLocaleString('en-IN')}`;
+  
+  fill.style.width = '100%';
+  btn.disabled = false;
+  dot.className = 'status-dot dot-idle';
+  document.querySelector('.agent-badge').innerHTML = '<span class="status-dot dot-idle" style="background:#00e676;box-shadow:0 0 6px #00e676"></span>READY';
+  
+  updateStats();
+  setTimeout(() => { bar.classList.remove('active'); }, 3000);
+  
+  // Schedule next auto-sync in 48 hours
+  const next = new Date(Date.now() + 48*60*60*1000);
+  localStorage.setItem('ira_next_sync', next.toISOString());
+}
+
+function exportLibrary() {
+  const templates = getTemplates();
+  const data = JSON.stringify(templates, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ira_template_library_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+}
+
+function addManualTemplate() {
+  const subject = prompt('Email Subject:');
+  if (!subject) return;
+  const preview = prompt('Email Body Preview:');
+  const industry = prompt('Industry (or "All"):') || 'All';
+  const type = prompt('Type (email/whatsapp):') || 'email';
+  const tone = prompt('Tone (formal/conversational/value/urgent):') || 'formal';
+  
+  const templates = getTemplates();
+  const id = `MANUAL_${Date.now()}`;
+  templates.push({ id, subject, preview, industry, type, tone, performance: 'new', created: new Date().toISOString(), used: 0, replies: 0 });
+  saveTemplates(templates);
+  updateStats();
+}
+
+// Check auto-sync schedule
+function checkAutoSync() {
+  const nextSync = localStorage.getItem('ira_next_sync');
+  if (nextSync && new Date() >= new Date(nextSync)) {
+    runSync();
+  }
+}
+
+// Init
+populateIndustryFilter();
+const lastSync = localStorage.getItem('ira_last_sync');
+if (lastSync) document.getElementById('lastSyncTime').textContent = `Last sync: ${new Date(lastSync).toLocaleString('en-IN')}`;
+updateStats();
+checkAutoSync();
+setInterval(checkAutoSync, 60*60*1000); // Check every hour
+</script>
+</body>
+</html>

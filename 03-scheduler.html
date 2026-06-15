@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IRA-03 | Scheduler</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root { --navy:#0d1b4b;--blue:#1565c0;--sky:#29b6f6;--dark:#0a1128;--accent:#00e5ff;--success:#00e676;--warn:#ffd740;--danger:#ff5252;--card:rgba(255,255,255,0.04);--border:rgba(41,182,246,0.2); }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--dark);color:#e0e8f0;font-family:'DM Sans',sans-serif;min-height:100vh;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(41,182,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(41,182,246,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.container{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:24px;}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.logo-badge{width:48px;height:48px;background:linear-gradient(135deg,#0d47a1,#29b6f6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:#fff;}
+.header-title h1{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--sky);}
+.header-title p{font-size:12px;color:#7a8bb0;margin-top:2px;}
+.agent-badge{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--accent);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.stat-num{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--sky);}
+.stat-label{font-size:11px;color:#7a8bb0;margin-top:4px;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.section-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:#c0cfe0;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all 0.2s;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--sky));color:#fff;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(41,182,246,0.4);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:#c0cfe0;}
+.btn-outline:hover{border-color:var(--sky);color:var(--sky);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:rgba(21,101,192,0.3);color:var(--sky);padding:10px 12px;text-align:left;font-weight:600;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;position:sticky;top:0;z-index:1;}
+td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:#c0cfe0;vertical-align:middle;}
+tr:hover td{background:rgba(41,182,246,0.04);}
+.table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto;}
+.chip{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;}
+.chip-scheduled{background:rgba(0,230,118,0.15);color:var(--success);}
+.chip-pending{background:rgba(255,215,64,0.15);color:var(--warn);}
+.chip-time{background:rgba(41,182,246,0.15);color:var(--sky);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;}
+.controls-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.search-input{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:#e0e8f0;padding:8px 12px;border-radius:8px;font-size:13px;flex:1;min-width:200px;}
+.tz-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px;}
+.tz-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.tz-country{font-size:12px;font-weight:500;color:#c0cfe0;margin-bottom:4px;}
+.tz-time{font-size:11px;color:var(--sky);}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.calendar-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px;}
+.cal-day{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.cal-day-name{font-size:10px;color:#5a7090;margin-bottom:4px;text-transform:uppercase;}
+.cal-date{font-size:16px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--sky);}
+.cal-count{font-size:10px;color:#00e676;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="container">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="logo-badge">IRA</div>
+    <div class="header-title">
+      <h1>SCHEDULER — AGENT 03</h1>
+      <p>Intelligent Send-Time Optimisation by Country Timezone</p>
+    </div>
+  </div>
+  <div class="agent-badge">SCHEDULER</div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Contacts to Schedule</div></div>
+  <div class="stat-card"><div class="stat-num" id="statScheduled">0</div><div class="stat-label">Scheduled</div></div>
+  <div class="stat-card"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today's Queue</div></div>
+  <div class="stat-card"><div class="stat-num" id="statTomorrow">0</div><div class="stat-label">Tomorrow's Queue</div></div>
+  <div class="stat-card"><div class="stat-num" id="statWeek">0</div><div class="stat-label">This Week</div></div>
+</div>
+
+<div class="panel">
+  <div class="section-title">Timezone Intelligence — Optimal Send Times</div>
+  <div class="tz-legend" id="tzLegend"></div>
+</div>
+
+<div class="panel">
+  <div class="section-title">7-Day Schedule Preview</div>
+  <div class="calendar-row" id="calendarRow"></div>
+</div>
+
+<div class="panel">
+  <div class="controls-bar">
+    <input class="search-input" placeholder="Search scheduled contacts..." oninput="searchSchedule(this.value)">
+    <button class="btn btn-primary" onclick="scheduleAll()">⚡ Schedule All Unscheduled</button>
+    <button class="btn btn-outline" onclick="clearSchedule()">↺ Reset Schedule</button>
+    <button class="btn btn-outline" onclick="exportSchedule()">↓ Export Schedule</button>
+    <select id="dayFilter" class="search-input" style="flex:none;width:auto;" onchange="filterByDay(this.value)">
+      <option value="">All Days</option>
+    </select>
+  </div>
+  <div class="section-title">Full Schedule <span id="scheduleCount" style="color:var(--sky);font-size:12px;font-weight:400;margin-left:8px"></span></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Company</th><th>Email</th><th>Country</th><th>Industry</th>
+          <th>Send Date</th><th>Send Time (Local)</th><th>Timezone</th><th>Subject</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+<script>
+const TIMEZONE_MAP = {
+  'India':'Asia/Kolkata','Pakistan':'Asia/Karachi','Bangladesh':'Asia/Dhaka',
+  'Sri Lanka':'Asia/Colombo','Nepal':'Asia/Kathmandu','UAE':'Asia/Dubai',
+  'Saudi Arabia':'Asia/Riyadh','Qatar':'Asia/Qatar','Bahrain':'Asia/Bahrain',
+  'Kuwait':'Asia/Kuwait','Oman':'Asia/Muscat','Singapore':'Asia/Singapore',
+  'Malaysia':'Asia/Kuala_Lumpur','Indonesia':'Asia/Jakarta','Philippines':'Asia/Manila',
+  'Thailand':'Asia/Bangkok','Vietnam':'Asia/Ho_Chi_Minh','China':'Asia/Shanghai',
+  'Japan':'Asia/Tokyo','South Korea':'Asia/Seoul','Australia':'Australia/Sydney',
+  'New Zealand':'Pacific/Auckland','United Kingdom':'Europe/London','Germany':'Europe/Berlin',
+  'France':'Europe/Paris','Italy':'Europe/Rome','Spain':'Europe/Madrid',
+  'Netherlands':'Europe/Amsterdam','Switzerland':'Europe/Zurich','Sweden':'Europe/Stockholm',
+  'Norway':'Europe/Oslo','Denmark':'Europe/Copenhagen','Finland':'Europe/Helsinki',
+  'Poland':'Europe/Warsaw','Czech Republic':'Europe/Prague','Austria':'Europe/Vienna',
+  'Portugal':'Europe/Lisbon','Greece':'Europe/Athens','Russia':'Europe/Moscow',
+  'Turkey':'Europe/Istanbul','South Africa':'Africa/Johannesburg','Nigeria':'Africa/Lagos',
+  'Kenya':'Africa/Nairobi','Egypt':'Africa/Cairo','USA':'America/New_York',
+  'Canada':'America/Toronto','Mexico':'America/Mexico_City','Brazil':'America/Sao_Paulo',
+  'Argentina':'America/Argentina/Buenos_Aires','Chile':'America/Santiago',
+  'Colombia':'America/Bogota','Peru':'America/Lima','Israel':'Asia/Jerusalem',
+  'Jordan':'Asia/Amman','Lebanon':'Asia/Beirut'
+};
+
+const OPTIMAL_SEND_HOUR = 13; // 1pm local = people typically free post-lunch
+
+function getContacts() { return JSON.parse(localStorage.getItem('ira_contacts_v1') || '[]'); }
+function getSchedule() { return JSON.parse(localStorage.getItem('ira_schedule_v1') || '[]'); }
+function saveSchedule(d) { localStorage.setItem('ira_schedule_v1', JSON.stringify(d)); }
+
+function getTimezone(country) {
+  const c = (country||'India').trim();
+  return TIMEZONE_MAP[c] || 'Asia/Kolkata';
+}
+
+function getOptimalSendDateTime(country, existingDates) {
+  const tz = getTimezone(country);
+  const now = new Date();
+  
+  // Find next available slot starting from today (or tomorrow if today is full/weekend)
+  let candidateDate = new Date(now);
+  // If it is past 2pm, start from tomorrow
+  if (now.getHours() >= 14) candidateDate.setDate(candidateDate.getDate() + 1);
+  
+  // Distribute across days - max 20 per day
+  const dailyCounts = {};
+  existingDates.forEach(d => {
+    const day = d.split('T')[0];
+    dailyCounts[day] = (dailyCounts[day] || 0) + 1;
+  });
+  
+  let attempts = 0;
+  while (attempts < 90) {
+    // Skip weekends for B2B
+    const dayOfWeek = candidateDate.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      const dateKey = candidateDate.toISOString().split('T')[0];
+      if (!dailyCounts[dateKey] || dailyCounts[dateKey] < 20) {
+        // Set to 1pm in local timezone
+        const localTime = new Date(candidateDate.toLocaleDateString('en-CA') + 'T' + OPTIMAL_SEND_HOUR.toString().padStart(2,'0') + ':00:00');
+        if (!dailyCounts[dateKey]) dailyCounts[dateKey] = 0;
+        dailyCounts[dateKey]++;
+        return { dateTime: localTime.toISOString(), timezone: tz, dateKey };
+      }
+    }
+    candidateDate.setDate(candidateDate.getDate() + 1);
+    attempts++;
+  }
+  
+  const dt = new Date(now); dt.setDate(dt.getDate() + 1);
+  return { dateTime: dt.toISOString(), timezone: tz, dateKey: dt.toISOString().split('T')[0] };
+}
+
+function scheduleAll() {
+  const contacts = getContacts();
+  const existingSchedule = getSchedule();
+  const scheduledEmails = new Set(existingSchedule.map(s => s.contactId));
+  
+  const unscheduled = contacts.filter(c => c.status === 'assigned' && !scheduledEmails.has(c.id));
+  
+  if (!unscheduled.length) { alert('All assigned contacts are already scheduled!'); return; }
+  
+  const existingDates = existingSchedule.map(s => s.dateTime);
+  const newSchedule = [...existingSchedule];
+  
+  unscheduled.forEach(contact => {
+    const { dateTime, timezone, dateKey } = getOptimalSendDateTime(contact.country, existingDates);
+    existingDates.push(dateTime);
+    newSchedule.push({
+      id: 'sch_' + Date.now() + Math.random().toString(36).substr(2,5),
+      contactId: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      company: contact.company,
+      industry: contact.industry,
+      country: contact.country,
+      subject: contact.assignedSubject,
+      body: contact.assignedBody,
+      dateTime, timezone, dateKey,
+      status: 'scheduled',
+      scheduledAt: new Date().toISOString()
+    });
+  });
+  
+  saveSchedule(newSchedule);
+  updateStats();
+  populateDayFilter(newSchedule);
+  renderScheduleTable(newSchedule);
+  renderCalendar(newSchedule);
+  alert(`✅ Scheduled ${unscheduled.length} emails!`);
+}
+
+function renderTimezonePanel() {
+  const legend = document.getElementById('tzLegend');
+  const topCountries = ['India','USA','UAE','Singapore','United Kingdom','Australia','Germany','Japan','South Africa','Canada'];
+  legend.innerHTML = topCountries.map(c => {
+    const tz = TIMEZONE_MAP[c] || 'Asia/Kolkata';
+    const now = new Date();
+    let localStr = '—';
+    try { localStr = now.toLocaleTimeString('en-US',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:true}); } catch(e){}
+    return `<div class="tz-item"><div class="tz-country">${c}</div><div class="tz-time">Now: ${localStr} · Send at 1:00 PM</div></div>`;
+  }).join('');
+}
+
+function renderCalendar(schedule) {
+  const row = document.getElementById('calendarRow');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date();
+  row.innerHTML = Array.from({length:7},(_,i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const key = d.toISOString().split('T')[0];
+    const count = schedule.filter(s => s.dateKey === key).length;
+    return `<div class="cal-day"><div class="cal-day-name">${days[d.getDay()]}</div><div class="cal-date">${d.getDate()}</div><div class="cal-count">${count > 0 ? count + ' emails' : '—'}</div></div>`;
+  }).join('');
+}
+
+function renderScheduleTable(schedule) {
+  document.getElementById('scheduleCount').textContent = `(${schedule.length} scheduled)`;
+  const tbody = document.getElementById('scheduleBody');
+  if (!schedule.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#5a7090;">No schedules yet. Ensure contacts are assigned in Agent 02, then click Schedule All.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...schedule].sort((a,b)=>new Date(a.dateTime)-new Date(b.dateTime)).slice(0,200).map((s,i) => {
+    const dt = new Date(s.dateTime);
+    let localTime = '1:00 PM';
+    try { localTime = dt.toLocaleTimeString('en-US',{timeZone:s.timezone,hour:'2-digit',minute:'2-digit',hour12:true}); } catch(e){}
+    return `<tr>
+      <td style="color:#5a7090">${i+1}</td>
+      <td>${s.firstName} ${s.lastName}</td>
+      <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.company}</td>
+      <td style="color:var(--sky);font-size:11px;">${s.email}</td>
+      <td>${s.country}</td>
+      <td><span style="background:rgba(21,101,192,0.3);color:#90caf9;padding:2px 8px;border-radius:10px;font-size:10px;">${s.industry||'-'}</span></td>
+      <td style="font-family:'Rajdhani',sans-serif;color:var(--warn);font-weight:700;">${s.dateKey}</td>
+      <td><span class="chip chip-time">${localTime}</span></td>
+      <td style="font-size:10px;color:#5a7090;">${s.timezone.split('/')[1]||s.timezone}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c0cfe0;font-size:11px;">${s.subject||'-'}</td>
+      <td><span class="chip ${s.status==='sent'?'chip-scheduled':'chip-pending'}">${s.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function populateDayFilter(schedule) {
+  const sel = document.getElementById('dayFilter');
+  const existingVals = new Set([...sel.options].map(o=>o.value));
+  const days = [...new Set(schedule.map(s=>s.dateKey))].sort();
+  days.forEach(d => {
+    if (!existingVals.has(d)) {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d; sel.appendChild(o);
+    }
+  });
+}
+
+function filterByDay(day) {
+  const schedule = getSchedule();
+  const filtered = day ? schedule.filter(s=>s.dateKey===day) : schedule;
+  renderScheduleTable(filtered);
+}
+
+function searchSchedule(q) {
+  const schedule = getSchedule();
+  const filtered = q ? schedule.filter(s=>[s.firstName,s.lastName,s.email,s.company,s.industry].join(' ').toLowerCase().includes(q.toLowerCase())) : schedule;
+  renderScheduleTable(filtered);
+}
+
+function clearSchedule() {
+  if (!confirm('Reset entire schedule?')) return;
+  saveSchedule([]);
+  updateStats();
+  renderScheduleTable([]);
+  renderCalendar([]);
+}
+
+function exportSchedule() {
+  const schedule = getSchedule();
+  if (!schedule.length) { alert('No schedule to export.'); return; }
+  const headers = ['ContactID','Name','Email','Company','Industry','Country','SendDate','SendTime','Timezone','Subject','Status'];
+  const rows = schedule.map(s => {
+    let t='1:00 PM';try{t=new Date(s.dateTime).toLocaleTimeString('en-US',{timeZone:s.timezone,hour:'2-digit',minute:'2-digit',hour12:true});}catch(e){}
+    return [s.contactId,`${s.firstName} ${s.lastName}`,s.email,s.company,s.industry,s.country,s.dateKey,t,s.timezone,`"${(s.subject||'').replace(/"/g,'""')}"`,s.status];
+  });
+  const csv = [headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`ira_schedule_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+
+function updateStats() {
+  const contacts = getContacts();
+  const schedule = getSchedule();
+  const today = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const weekEnd = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
+  
+  document.getElementById('statTotal').textContent = contacts.filter(c=>c.status==='assigned').length;
+  document.getElementById('statScheduled').textContent = schedule.length;
+  document.getElementById('statToday').textContent = schedule.filter(s=>s.dateKey===today).length;
+  document.getElementById('statTomorrow').textContent = schedule.filter(s=>s.dateKey===tomorrow).length;
+  document.getElementById('statWeek').textContent = schedule.filter(s=>s.dateKey>=today&&s.dateKey<=weekEnd).length;
+}
+
+// Init
+renderTimezonePanel();
+const sched = getSchedule();
+updateStats();
+populateDayFilter(sched);
+renderScheduleTable(sched);
+renderCalendar(sched);
+setInterval(renderTimezonePanel, 60000);
+</script>
+</body>
+</html>
